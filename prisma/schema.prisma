@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  name            String?
+  password        String?
+
+  // Paystack settlement details
+  accountNumber   String?
+  bankCode        String?
+
+  createdAt       DateTime      @default(now())
+
+  // Premium
+  isPremium       Boolean       @default(false)
+  premiumTier     String        @default("FREE")
+  premiumExpires  DateTime?
+
+  campaigns       Campaign[]
+  transactions    Transaction[]
+}
+
+model Campaign {
+  id            String      @id @default(uuid())
+  title         String
+  description   String
+  organizer     String
+
+  targetAmount  Float
+  raisedAmount  Float       @default(0)
+
+  isPinned      Boolean     @default(false)
+  isVerified    Boolean     @default(false)
+
+  subAccountId  String      @default("PENDING_SETUP")
+
+  createdAt     DateTime    @default(now())
+  endsAt         DateTime
+
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  donations      Donation[]
+}
+
+model Donation {
+  id           String     @id @default(uuid())
+
+  donorEmail   String
+  baseAmount   Float
+  feeAmount    Float      @default(50)
+  totalPaid    Float
+
+  createdAt    DateTime   @default(now())
+
+  campaignId   String
+  campaign     Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id             String    @id @default(uuid())
+
+  reference      String    @unique
+  amount         Float
+  status         String
+  tierPurchased  String
+
+  createdAt      DateTime  @default(now())
+
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
